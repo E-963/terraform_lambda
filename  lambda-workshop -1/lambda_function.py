@@ -1,18 +1,19 @@
 import boto3
 import os
 
-def lambda_handler(event, context):
-    s3 = boto3.client('s3')
-    source_bucket = os.environ['SOURCE_BUCKET']
-    dest_bucket = os.environ['DEST_BUCKET']
+s3_client = boto3.client('s3')
 
-    for record in event['Records']:
-        key = record['s3']['object']['key']
-        copy_source = {'Bucket': source_bucket, 'Key': key}
-        
-        s3.copy_object(CopySource=copy_source, Bucket=dest_bucket, Key=key)
-        
-    return {
-        'statusCode': 200,
-        'body': 'File transferred successfully!'
-    }
+def lambda_handler(event, context):
+    # Extracting bucket names and object key from the event
+    source_bucket = event['Records'][0]['s3']['bucket']['name']
+    object_key = event['Records'][0]['s3']['object']['key']
+    destination_bucket = 'frogtech-us-internal'
+    
+    try:
+        # Copy object from source bucket to destination bucket
+        copy_source = {'Bucket': source_bucket, 'Key': object_key}
+        s3_client.copy_object(CopySource=copy_source, Bucket=destination_bucket, Key=object_key)
+        print(f"Successfully copied {object_key} from {source_bucket} to {destination_bucket}")
+    except Exception as e:
+        print(f"Error: {e}")
+        raise e
